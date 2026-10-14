@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>桂林・陽朔 5 天 4 晚｜高鐵進出行程地圖</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+:root{
+  --bg:#f3f5f4; --side:#ffffff; --ink:#1f2d33; --mute:#66757a; --line:#e3e8e6; --chip:#f1f4f3;
+  --brand:#0f5c57; --brand-ink:#ffffff; --tip:#eef6f4;
+  --d1:#d64532; --d2:#e08a1e; --d3:#1f78b4; --d4:#2e9a5a; --d5:#7b4fb0; --rail:#37474f;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#121718; --side:#1a2123; --ink:#e6eeec; --mute:#9aa9a6; --line:#2c3638; --chip:#232c2e;
+    --brand:#3fb3a6; --brand-ink:#0d1a19; --tip:#1d2a29; --rail:#b0bec5;
+    color-scheme:dark;
+  }
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;height:100dvh}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif;background:var(--bg);color:var(--ink);display:flex;overflow:hidden}
+#side{width:430px;flex-shrink:0;background:var(--side);border-right:1px solid var(--line);display:flex;flex-direction:column;overflow-y:auto;z-index:500}
+.head{padding:22px 20px 18px;background:var(--brand);color:var(--brand-ink)}
+.head h1{font-size:20px;font-weight:700;letter-spacing:.02em}
+.head p{font-size:13px;opacity:.9;margin-top:4px}
+.head .meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.head .meta span{font-size:12px;background:rgba(255,255,255,.18);padding:3px 9px;border-radius:10px}
+.tip{margin:14px 16px 2px;padding:12px 14px;background:var(--tip);border-radius:8px;font-size:13px;line-height:1.6}
+.tip b{color:var(--brand)}
+.days{padding:12px 16px 4px}
+.card{border:1px solid var(--line);border-left:5px solid var(--c);border-radius:10px;padding:13px 14px;margin-bottom:12px;cursor:pointer;transition:box-shadow .15s,background .15s}
+.card:hover,.card.on{box-shadow:0 4px 14px rgba(0,0,0,.10)}
+.card.on{background:var(--chip)}
+.card h2{font-size:15px;display:flex;justify-content:space-between;gap:8px;align-items:center}
+.card h2 small{font-size:11px;color:#fff;background:var(--c);padding:2px 8px;border-radius:4px;white-space:nowrap;font-weight:600}
+.where{font-size:12px;color:var(--mute);margin:5px 0 7px}
+.desc{font-size:13px;line-height:1.6}
+.opt{font-size:12px;font-weight:600;color:var(--c);margin:9px 0 4px}
+.pills{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.pill{font:inherit;font-size:12px;background:var(--chip);color:var(--ink);border:1px solid var(--line);padding:4px 10px;border-radius:12px;cursor:pointer}
+.pill:hover{background:var(--c);color:#fff;border-color:var(--c)}
+.hotel{margin-top:9px;padding-top:8px;border-top:1px dashed var(--line);font-size:12px;color:var(--mute)}
+.legend{padding:12px 20px 18px;font-size:12px;color:var(--mute);border-top:1px solid var(--line)}
+.legend div{display:flex;align-items:center;gap:10px;margin-top:6px}
+.legend i{display:inline-block;width:26px;height:0;border-top:3px solid var(--c)}
+.legend i.dash{border-top-style:dashed}
+.legend p{margin-top:10px;line-height:1.55}
+#mapwrap{flex:1;position:relative}
+#map{position:absolute;inset:0;background:#dfe7e4}
+.bar{position:absolute;top:12px;left:56px;right:12px;z-index:600;display:flex;gap:6px;flex-wrap:wrap;pointer-events:none}
+.bar button{pointer-events:auto;font:inherit;font-size:13px;font-weight:600;background:var(--side);color:var(--ink);border:1px solid var(--line);padding:7px 13px;border-radius:18px;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.15);display:flex;align-items:center;gap:6px}
+.bar button .d{width:9px;height:9px;border-radius:50%;background:var(--c)}
+.bar button.on{background:var(--brand);color:var(--brand-ink);border-color:var(--brand)}
+button:focus-visible,.card:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.pin{width:28px;height:28px;border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;border:2.5px solid #fff;box-shadow:0 2px 7px rgba(0,0,0,.35)}
+.pin.sq{border-radius:7px}
+.zone{background:rgba(255,255,255,.93);color:#1f2d33;border:1.5px solid #0f5c57;border-radius:8px;padding:4px 9px;font-size:12px;font-weight:700;white-space:nowrap;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.zone span{display:block;font-weight:400;font-size:11px;color:#55666b}
+.leaflet-popup-content{font-size:13px;line-height:1.55;margin:12px 14px}
+.leaflet-popup-content h4{font-size:14px;margin-bottom:4px}
+@media (max-width:820px){
+  html,body{height:100dvh}
+  body{flex-direction:column-reverse}
+  #side{width:100%;height:44dvh;border-right:0;border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);-webkit-overflow-scrolling:touch}
+  #mapwrap{height:56dvh;flex:none}
+  .head{padding:14px 16px 12px}
+  .head h1{font-size:17px}
+  .tip{font-size:12.5px;margin:10px 12px 0}
+  .days{padding:10px 12px 2px}
+  .bar{left:0;right:0;top:calc(8px + env(safe-area-inset-top,0px));padding:0 10px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .bar::-webkit-scrollbar{display:none}
+  .bar button{flex:none;font-size:12.5px;padding:7px 12px}
+  .leaflet-top.leaflet-left{top:48px}
+  .pill{padding:6px 11px;font-size:12.5px}
+  .leaflet-popup-content{font-size:12.5px;margin:10px 12px}
+}
+@media (prefers-reduced-motion:reduce){.card{transition:none}}
+</style>
+</head>
+<body>
+
+<aside id="side">
+  <div class="head">
+    <h1>桂林・陽朔 5 天 4 晚</h1>
+    <p>私人包團｜別克 GL8 專車｜4 位旅客</p>
+    <div class="meta"><span>📅 2026/10/19（一）– 10/23（五）</span><span>🚄 香港 → 桂林 → 珠海</span></div>
+  </div>
+
+  <div class="tip">
+    <b>🧭 一句話看懂方位：</b>從香港搭高鐵進<b>桂林西站</b>，前 2 晚住<b>桂林市區</b>（Day 2 可往<b>北邊山區</b>看龍脊梯田）；Day 3 搭船沿漓江<b>往南</b>到<b>陽朔</b>住 2 晚；Day 5 從桂林搭高鐵往<b>東南</b>到珠海。
+  </div>
+
+  <div class="days" id="days"></div>
+
+  <div class="legend">
+    <div><i style="--c:var(--rail)" class="dash"></i>高鐵（示意，非實際鐵軌）</div>
+    <div><i style="--c:var(--d3)" class="dash"></i>漓江遊船水路</div>
+    <div><i style="--c:var(--mute)"></i>包車陸路（直線示意）</div>
+    <p>座標為估算值，標「約」的地點位置不確定。高鐵站以車票為準。<br>右下角可切換底圖；高德中文地圖在中國境內最清楚。</p>
+  </div>
+</aside>
+
+<main id="mapwrap">
+  <div class="bar" id="bar"></div>
+  <div id="map"></div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+// ---------- 資料（WGS-84，估算值） ----------
+const C={1:"#d64532",2:"#e08a1e",3:"#1f78b4",4:"#2e9a5a",5:"#7b4fb0",rail:"#37474f"};
+const S={
+  hk:      {p:[22.304,114.165],d:[1],c:"rail",l:"🚄",t:"香港西九龍站",i:"出發站。直達桂林西約 3 小時。"},
+  zhuhai:  {p:[22.215,113.548],d:[5],c:"rail",l:"🏁",t:"珠海站",i:"終點。桂林往珠海多數需在廣州南站轉車，車次請以車票為準。"},
+  gzs:     {p:[22.989,113.269],d:[5],c:"rail",l:"轉",t:"廣州南站（約）",i:"桂林往珠海常見的轉乘站，實際是否轉車以車票為準。"},
+  glw:     {p:[25.283,110.203],d:[1,5],c:"rail",l:"🚄",t:"桂林西站",i:"<b>Day 1 抵達</b>：香港直達車停這站。<br><b>Day 5 離開</b>：往珠海的車可能從桂林西、桂林北或陽朔站上車，請以車票為準。<br>桂林西在市區西北郊，到市中心約 30–40 分鐘。"},
+  ghotel:  {p:[25.272,110.304],d:[1,2,3],c:1,l:"宿",sq:1,t:"桂林喜來登（連住 2 晚）",i:"5 星飯店，市中心漓江邊，象鼻山、東西巷都很近。"},
+  xiangbi: {p:[25.268,110.300],d:[1],c:1,l:"1",t:"象鼻山",i:"桂林城徽，山形像大象在江邊喝水。"},
+  riyue:   {p:[25.276,110.294],d:[1],c:1,l:"2",t:"日月雙塔",i:"杉湖上的銅塔與琉璃塔，晚上點燈最好看。可選贈一江四湖船票。"},
+  dongxi:  {p:[25.286,110.299],d:[1],c:1,l:"3",t:"東西巷",i:"明清老街區，小吃、伴手禮。"},
+  huangluo:{p:[25.744,110.085],d:[2],c:2,l:"瑤",t:"黃洛瑤寨",i:"<b>選項 1</b>｜紅瑤「長髮村」，女性有蓄長髮的傳統。"},
+  pingan:  {p:[25.760,110.105],d:[2],c:2,l:"田",t:"平安梯田",i:"<b>選項 1・梯田 2 選 1</b>｜步道較好走，適合長輩。"},
+  jinkeng: {p:[25.800,110.150],d:[2],c:2,l:"田",t:"金坑（大寨）梯田",i:"<b>選項 1・梯田 2 選 1</b>｜規模較大、較多階梯。贈無人機空拍微電影。<br>桂林→龍脊單程約 2 小時山路。"},
+  wangcheng:{p:[25.287,110.293],d:[2],c:2,l:"城",t:"獨秀峰・靖江王城",i:"<b>選項 2</b>｜明代王府，可體驗「考狀元」。"},
+  gudong:  {p:[25.325,110.428],d:[2],c:2,l:"瀑",t:"古東景區",i:"<b>選項 2</b>｜森林瀑布、溯溪步道，市區東北約 25 km。"},
+  guihai:  {p:[25.335,110.300],d:[2],c:2,l:"?",t:"桂海晴嵐（約）",i:"<b>選項 2</b>｜確切位置不確定，推測在桂林市近郊。"},
+  pier:    {p:[25.170,110.430],d:[3],c:3,l:"船",t:"漓江遊船碼頭（約）",i:"四星遊船起點（磨盤山或竹江一帶，以通知為準），全程約 4.5 小時。"},
+  xingping:{p:[24.920,110.525],d:[3],c:3,l:"20",t:"九馬畫山・興坪",i:"漓江最精華段，人民幣 20 元背面的風景就在這裡。"},
+  yspier:  {p:[24.779,110.497],d:[3],c:3,l:"岸",t:"陽朔碼頭",i:"遊船終點，司機在此接應。"},
+  yinziyan:{p:[24.630,110.390],d:[3],c:3,l:"岩",t:"銀子岩",i:"大型鐘乳石洞，在陽朔南方約 20 km（荔浦）。"},
+  shili:   {p:[24.750,110.460],d:[3],c:3,l:"路",t:"十里畫廊",i:"陽朔往月亮山的田園公路，車上看。"},
+  xijie:   {p:[24.776,110.493],d:[3,5],c:3,l:"街",t:"陽朔西街",i:"陽朔最熱鬧的老街，晚上逛。Day 5 自由活動也在這一帶。"},
+  yhotel:  {p:[24.785,110.508],d:[3,4,5],c:4,l:"宿",sq:1,t:"陽朔漓境度假酒店（連住 2 晚）",i:"5 鑽景觀度假酒店。"},
+  yulong:  {p:[24.800,110.420],d:[4],c:4,l:"筏",t:"遇龍河竹筏",i:"雙人竹筏，比漓江安靜。<br>⚠️ 70 歲以上、孕婦、心臟病／高血壓者不可搭。"},
+  fuli:    {p:[24.825,110.395],d:[4],c:4,l:"橋",t:"富里橋（約）",i:"約 600 年石拱橋，贈民族服飾換裝拍照。"},
+  xianggong:{p:[24.955,110.500],d:[4],c:4,l:"灣",t:"相公山（灕江第一灣）",i:"<b>3 選 1</b>｜爬階梯上觀景台看漓江大轉彎。"},
+  qianli:  {p:[24.880,110.470],d:[4],c:4,l:"?",t:"千里江山（約）",i:"<b>3 選 1</b>｜確切位置不確定。"},
+  taoyuan: {p:[24.840,110.440],d:[4],c:4,l:"?",t:"世外桃源（約）",i:"<b>3 選 1</b>｜確切位置不確定，田園水鄉景區。"}
+};
+const LIRIVER=[[25.170,110.430],[25.090,110.440],[25.000,110.490],[24.920,110.525],[24.850,110.520],[24.779,110.497]];
+const ROUTES={
+  1:[{pts:["hk",[22.61,114.03],[23.40,113.20],[24.40,111.57],"glw"],rail:1},{pts:["glw","ghotel","xiangbi","riyue","dongxi","ghotel"]}],
+  2:[{pts:["ghotel",[25.45,110.22],"pingan","huangluo","jinkeng"]},{pts:["ghotel","wangcheng","gudong"],dash:1}],
+  3:[{pts:["ghotel","pier"]},{pts:LIRIVER,water:1},{pts:["yspier","yinziyan","shili","xijie","yhotel"]}],
+  4:[{pts:["yhotel","yulong","fuli","xianggong","yhotel"]}],
+  5:[{pts:["yhotel",[24.95,110.36],"glw"]},{pts:["glw",[24.40,111.57],"gzs","zhuhai"],rail:1}]
+};
+const DAYS=[
+  {n:1,tag:"高鐵抵達・市區",title:"Day 1｜10/19（一）抵達桂林",where:"📍 香港西九龍 → 桂林西站（約 3 小時）→ 市中心",
+   desc:"高鐵到桂林西站，專車接到市中心飯店。下午逛象鼻山、日月雙塔、東西巷，市區景點車程都在 10 分鐘內。",
+   pills:[["hk","🚄 西九龍"],["glw","🚄 桂林西站"],["ghotel","🏨 喜來登"],["xiangbi","象鼻山"],["riyue","日月雙塔"],["dongxi","東西巷"]],
+   hotel:"🏨 桂林喜來登（第 1 晚）"},
+  {n:2,tag:"2 選 1",title:"Day 2｜10/20（二）梯田或近郊",where:"📍 選項 1 往北約 100 km 山區；選項 2 留在市區近郊",
+   desc:"兩個玩法擇一。10 月下旬龍脊梯田正值金黃稻穗季，但山路單程約 2 小時；選項 2 較輕鬆。",
+   opts:[["選項 1：龍脊天梯",[["huangluo","黃洛瑤寨"],["pingan","平安梯田"],["jinkeng","金坑梯田"]]],
+         ["選項 2：山水與人文",[["wangcheng","靖江王城"],["gudong","古東景區"],["guihai","桂海晴嵐"]]]],
+   hotel:"🏨 桂林喜來登（第 2 晚，免搬行李）"},
+  {n:3,tag:"漓江南下",title:"Day 3｜10/21（三）漓江遊船到陽朔",where:"📍 往南順江而下：水路 4.5 小時＋陸路",
+   desc:"早上到碼頭搭四星遊船，經興坪、九馬畫山到陽朔下船。下午銀子岩鐘乳石洞，車遊十里畫廊，晚上逛西街。",
+   pills:[["pier","🚢 碼頭"],["xingping","九馬畫山・興坪"],["yspier","陽朔碼頭"],["yinziyan","銀子岩"],["shili","十里畫廊"],["xijie","西街"],["yhotel","🏨 漓境酒店"]],
+   hotel:"🏨 陽朔漓境度假酒店（第 3 晚）"},
+  {n:4,tag:"陽朔田園",title:"Day 4｜10/22（四）遇龍河・田園",where:"📍 陽朔縣境內，各點車程約 15–40 分鐘",
+   desc:"上午遇龍河雙人竹筏、富里橋換裝拍照；下午三個景點選一個。",
+   pills:[["yulong","遇龍河竹筏"],["fuli","富里橋"]],
+   opts:[["下午 3 選 1",[["xianggong","相公山"],["qianli","千里江山"],["taoyuan","世外桃源"]]]],
+   hotel:"🏨 陽朔漓境度假酒店（第 4 晚）"},
+  {n:5,tag:"高鐵往珠海",title:"Day 5｜10/23（五）自由活動・往珠海",where:"📍 陽朔 → 桂林高鐵站約 1–1.5 小時 → 珠海",
+   desc:"睡到自然醒，陽朔市區自由逛。專車送到高鐵站，搭車往珠海（多數經廣州南轉車）。上車站以車票為準。",
+   pills:[["xijie","陽朔西街"],["glw","🚄 桂林西站"],["gzs","廣州南（轉）"],["zhuhai","🏁 珠海站"]],
+   hotel:"🚄 專車送站"}
+];
+const VIEWS={0:[[24.55,110.0],[25.85,110.62]],1:[[25.25,110.18],[25.30,110.33]],2:[[25.25,110.05],[25.83,110.45]],
+  3:[[24.60,110.35],[25.30,110.55]],4:[[24.76,110.37],[24.98,110.53]],5:[[22.1,110.0],[25.4,114.3]],trip:[[22.1,110.0],[25.9,114.3]]};
+
+// ---------- WGS-84 → GCJ-02（高德底圖用，避免偏移數百公尺） ----------
+function gcj([lat,lon]){
+  const a=6378245,ee=0.00669342162296594323,PI=Math.PI;
+  const tl=(x,y)=>{let r=-100+2*x+3*y+.2*y*y+.1*x*y+.2*Math.sqrt(Math.abs(x));r+=(20*Math.sin(6*x*PI)+20*Math.sin(2*x*PI))*2/3;r+=(20*Math.sin(y*PI)+40*Math.sin(y/3*PI))*2/3;r+=(160*Math.sin(y/12*PI)+320*Math.sin(y*PI/30))*2/3;return r};
+  const tn=(x,y)=>{let r=300+x+2*y+.1*x*x+.1*x*y+.1*Math.sqrt(Math.abs(x));r+=(20*Math.sin(6*x*PI)+20*Math.sin(2*x*PI))*2/3;r+=(20*Math.sin(x*PI)+40*Math.sin(x/3*PI))*2/3;r+=(150*Math.sin(x/12*PI)+300*Math.sin(x/30*PI))*2/3;return r};
+  let dLat=tl(lon-105,lat-35),dLon=tn(lon-105,lat-35);const rad=lat/180*PI;let m=Math.sin(rad);m=1-ee*m*m;const s=Math.sqrt(m);
+  dLat=dLat*180/((a*(1-ee))/(m*s)*PI);dLon=dLon*180/(a/s*Math.cos(rad)*PI);
+  return [lat+dLat,lon+dLon];
+}
+let useGcj=true;
+const P=ll=>useGcj?gcj(ll):ll;
+const pos=k=>Array.isArray(k)?k:S[k].p;
+
+// ---------- 地圖 ----------
+const gaode=L.tileLayer("https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}",{subdomains:"1234",maxZoom:18,attribution:"© 高德地圖"});
+const carto=L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",{subdomains:"abcd",maxZoom:19,attribution:"© OpenStreetMap © CARTO"});
+const esri=L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",{maxZoom:18,attribution:"© Esri"});
+const map=L.map("map",{zoomControl:true,layers:[gaode]});
+const bases={"中文道路圖（高德）":gaode,"街道圖（CARTO）":carto,"衛星圖（Esri）":esri};
+const isMobile=matchMedia("(max-width:820px)").matches;
+L.control.layers(bases,null,{position:"bottomright",collapsed:isMobile}).addTo(map);
+L.control.scale({imperial:false,position:"bottomleft"}).addTo(map);
+
+const markers={},lines=[],zones=[];
+const col=c=>C[c];
+Object.entries(S).forEach(([k,s])=>{
+  const m=L.marker(P(s.p),{icon:L.divIcon({className:"",html:`<div class="pin${s.sq?" sq":""}" style="background:${col(s.c)}">${s.l}</div>`,iconSize:[28,28],iconAnchor:[14,14],popupAnchor:[0,-14]}),title:s.t})
+    .bindPopup(`<h4 style="color:${col(s.c)}">${s.t}</h4>${s.i}`);
+  m.addTo(map);markers[k]=m;
+});
+Object.entries(ROUTES).forEach(([d,segs])=>segs.forEach(seg=>{
+  const raw=seg.pts.map(pos);
+  const style=seg.rail?{color:C.rail,weight:3,dashArray:"2 8",lineCap:"round",opacity:.85}
+    :seg.water?{color:C[3],weight:5,dashArray:"10 8",opacity:.9}
+    :{color:C[d],weight:4,opacity:.8,dashArray:seg.dash?"6 7":null};
+  const pl=L.polyline(raw.map(P),style).addTo(map);
+  lines.push({d:+d,pl,raw});
+}));
+[[[25.90,110.12],"⛰️ 龍脊梯田","Day 2 選項 1・北邊山區"],[[25.36,110.52],"🏙️ 桂林市區","Day 1–2 住宿"],[[24.70,110.66],"🏞️ 陽朔","Day 3–4 住宿"]]
+ .forEach(([p,t,s])=>{zones.push({raw:p,m:L.marker(P(p),{interactive:false,icon:L.divIcon({className:"",html:`<div class="zone">${t}<span>${s}</span></div>`,iconSize:[130,40],iconAnchor:[65,20]})}).addTo(map)})});
+
+map.on("baselayerchange",e=>{
+  useGcj=e.layer===gaode;
+  Object.entries(markers).forEach(([k,m])=>m.setLatLng(P(S[k].p)));
+  lines.forEach(o=>o.pl.setLatLngs(o.raw.map(P)));
+  zones.forEach(z=>z.m.setLatLng(P(z.raw)));
+});
+
+// ---------- 側欄與篩選 ----------
+const daysEl=document.getElementById("days");
+DAYS.forEach(d=>{
+  const el=document.createElement("div");
+  el.className="card";el.id="card-"+d.n;el.tabIndex=0;el.style.setProperty("--c",C[d.n]);
+  const pill=([k,t])=>`<button class="pill" data-k="${k}">${t}</button>`;
+  el.innerHTML=`<h2>${d.title}<small>${d.tag}</small></h2><div class="where">${d.where}</div><div class="desc">${d.desc}</div>`
+    +(d.pills?`<div class="pills">${d.pills.map(pill).join("")}</div>`:"")
+    +(d.opts||[]).map(([o,ps])=>`<div class="opt">${o}</div><div class="pills">${ps.map(pill).join("")}</div>`).join("")
+    +`<div class="hotel">${d.hotel}</div>`;
+  el.addEventListener("click",e=>{const b=e.target.closest(".pill");if(b){focusSpot(b.dataset.k,d.n);return}select(d.n)});
+  el.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target===el)select(d.n)});
+  daysEl.appendChild(el);
+});
+const bar=document.getElementById("bar");
+[[0,"🗺️ 桂林全覽"],["trip","🚄 含高鐵進出"],...DAYS.map(d=>[d.n,"Day "+d.n])].forEach(([v,t])=>{
+  const b=document.createElement("button");b.dataset.v=v;
+  b.innerHTML=(typeof v==="number"&&v>0?`<span class="d" style="--c:${C[v]}"></span>`:"")+t;
+  b.onclick=()=>select(v);bar.appendChild(b);
+});
+
+function fit(v){const [a,b]=VIEWS[v];map.flyToBounds([P(a),P(b)],{duration:.8,padding:isMobile?[16,16]:[30,30],paddingTopLeft:isMobile?[16,56]:[30,60]})}
+function select(v){
+  const day=typeof v==="number"&&v>0?v:0;
+  bar.querySelectorAll("button").forEach(b=>b.classList.toggle("on",String(b.dataset.v)===String(v)));
+  document.querySelectorAll(".card").forEach(c=>c.classList.toggle("on",c.id==="card-"+day));
+  if(day) document.getElementById("card-"+day).scrollIntoView({behavior:"smooth",block:"nearest"});
+  Object.entries(markers).forEach(([k,m])=>{const show=!day||S[k].d.includes(day);show?m.addTo(map):m.remove()});
+  lines.forEach(o=>(!day||o.d===day)?o.pl.addTo(map):o.pl.remove());
+  zones.forEach(z=>day?z.m.remove():z.m.addTo(map));
+  map.closePopup();fit(v);
+}
+function focusSpot(k,day){
+  select(day);
+  setTimeout(()=>{map.flyTo(P(S[k].p),Math.max(map.getZoom(),13),{duration:.7});setTimeout(()=>markers[k].openPopup(),750)},850);
+}
+map.fitBounds(VIEWS[0].map(P));
+select(0);
+</script>
+</body>
+</html>
